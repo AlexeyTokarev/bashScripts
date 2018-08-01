@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo "Installing necessary software and packages..."
 sudo apt-get update
 sudo apt-get upgrade
@@ -12,16 +13,15 @@ sudo wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.g
 sudo tar xvf go-ipfs_v0.4.17_linux-amd64.tar.gz
 cd go-ipfs
 sudo ./install.sh
-ipfs init
+sudo ipfs init # Проверить нужен ли рут
 cd /etc/systemd/system
-export currentUserName=$(whoami)
 echo '[Unit]
       Description=ipfs client
       After=syslog.target network.target
 
       [Service]
-      User=${currentUserName}
-      Group=${currentUserName}
+      User=sluser
+      Group=sluser
       Type=simple
       ExecStart=/usr/local/bin/ipfs daemon
     StandardOutput=null
@@ -33,7 +33,7 @@ echo '[Unit]
     [Install]
     WantedBy=multi-user.target
 ' > ipfs.service
-sudo systemctl start ipfs
+sudo systemctl start ipfs #Проверить
 sudo systemctl enable ipfs
 sudo journalctl -u ipfs
 cd
@@ -61,35 +61,30 @@ mv P5ooaB linux-amd64_deb.tgz
 tar -xvzf linux-amd64_deb.tgz
 cd linux-amd64_deb
 sudo ./install.sh
-sudo /opt/cprocsp/sbin/amd64/cpconfig -license -set "${CryptoProLicenseNumber}"
+sudo /opt/cprocsp/sbin/amd64/cpconfig -license -set "40404-B0000-021GW-N5Q2U-ERZ8U"
 /opt/cprocsp/bin/amd64/csptest -keyset -enum_cont -verifycontext -fqcn
 cd
 
 echo "Downloading project..."
 cd /var
-mkdir www
+sudo mkdir www
 cd www
-git clone https://solarl.visualstudio.com/DBG/_git/DBG dbg
+sudo git clone https://solarl.visualstudio.com/DBG/_git/DBG dbg
 cd 
-echo "Updating npm packages..."
-cd /var/www/dbg/abs && sudo npm install
-cd /var/www/dbg/auth && sudo npm install
-cd /var/www/dbg/bank && sudo npm install
-cd /var/www/dbg/bankguarantees && sudo npm install
-cd /var/www/dbg/crypto && sudo npm install
-cd /var/www/dbg/crypto-pro && sudo npm install
-cd /var/www/dbg/gateway && sudo npm install
-cd /var/www/dbg/informer && sudo npm install
-cd /var/www/dbg/logger && sudo npm install
-cd /var/www/dbg/notification && sudo npm install
-cd /var/www/dbg/smartcontract && sudo npm install
-cd /var/www/dbg/storage && sudo npm install
-cd /var/www/dbg/ui && sudo npm install
-cd /var/www/dbg/xmlparser && sudo npm install
 
 echo "Installing Certificate..."
-su 
-cp -R /var/www/dbg/crypto/certificates/55298654.000 /var/opt/cprocsp/keys/root 
-exit
+sudo cp -R /var/www/dbg/crypto/certificates/55298654.000 /var/opt/cprocsp/keys/root 
 sudo /opt/cprocsp/bin/amd64/certmgr -inst -store umy -file '/var/www/dbg/crypto/certificates/55298654e-d073-f75e-9368-0847d712bb2.cer' -cont '\\.\HDIMAGE\55298654e-d073-f75e-9368-0847d712bb2'
-echo "Success"
+
+echo "Installing and settings Nginx and phpPgAdmin..."
+sudo wget http://nginx.org/keys/nginx_signing.key
+sudo apt-key add nginx_signing.key
+sudo chown -R sluser /etc/apt/sources.list
+echo "deb http://nginx.org/packages/ubuntu/ xenial nginx	
+deb-src http://nginx.org/packages/ubuntu/ xenial nginx
+" > /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get install nginx
+sudo chown -R sluser /etc/nginx/conf.d/default.conf
+
+echo "Build&Deploy dbg projects complete."
