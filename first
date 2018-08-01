@@ -1,0 +1,95 @@
+#!/bin/bash
+echo "Installing necessary software and packages..."
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install curl
+
+echo "Installing PostgreSQL..."
+sudo apt-get install postgresql postgresql-contrib
+
+echo "Installing IPFS..."
+sudo wget https://dist.ipfs.io/go-ipfs/v0.4.17/go-ipfs_v0.4.17_linux-amd64.tar.gz
+sudo tar xvf go-ipfs_v0.4.17_linux-amd64.tar.gz
+cd go-ipfs
+sudo ./install.sh
+ipfs init
+cd /etc/systemd/system
+export currentUserName=$(whoami)
+echo '[Unit]
+      Description=ipfs client
+      After=syslog.target network.target
+
+      [Service]
+      User=${currentUserName}
+      Group=${currentUserName}
+      Type=simple
+      ExecStart=/usr/local/bin/ipfs daemon
+    StandardOutput=null
+    StandardError=syslog
+    SyslogIdentifier=ipfs
+    Restart=always
+    RestartSec=10
+ 
+    [Install]
+    WantedBy=multi-user.target
+' > ipfs.service
+sudo systemctl start ipfs
+sudo systemctl enable ipfs
+sudo journalctl -u ipfs
+cd
+
+echo "Installing NodeJS and NPM..."
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo apt-get install -y build-essential
+
+echo "Installing Truffle..."
+sudo npm install -g truffle@4.1.3
+
+echo "Installing Angular..."
+sudo npm install -g @angular/cli
+
+echo "Installing Webpack..."
+sudo npm install -g webpack
+
+echo "Installing PM2"
+sudo npm install -g pm2
+
+echo "Installing CryptoPro CSP..."
+wget https://goo.gl/P5ooaB
+mv P5ooaB linux-amd64_deb.tgz
+tar -xvzf linux-amd64_deb.tgz
+cd linux-amd64_deb
+sudo ./install.sh
+sudo /opt/cprocsp/sbin/amd64/cpconfig -license -set "${CryptoProLicenseNumber}"
+/opt/cprocsp/bin/amd64/csptest -keyset -enum_cont -verifycontext -fqcn
+cd
+
+echo "Downloading project..."
+cd /var
+mkdir www
+cd www
+git clone https://solarl.visualstudio.com/DBG/_git/DBG dbg
+cd 
+echo "Updating npm packages..."
+cd /var/www/dbg/abs && sudo npm install
+cd /var/www/dbg/auth && sudo npm install
+cd /var/www/dbg/bank && sudo npm install
+cd /var/www/dbg/bankguarantees && sudo npm install
+cd /var/www/dbg/crypto && sudo npm install
+cd /var/www/dbg/crypto-pro && sudo npm install
+cd /var/www/dbg/gateway && sudo npm install
+cd /var/www/dbg/informer && sudo npm install
+cd /var/www/dbg/logger && sudo npm install
+cd /var/www/dbg/notification && sudo npm install
+cd /var/www/dbg/smartcontract && sudo npm install
+cd /var/www/dbg/storage && sudo npm install
+cd /var/www/dbg/ui && sudo npm install
+cd /var/www/dbg/xmlparser && sudo npm install
+
+echo "Installing Certificate..."
+su 
+cp -R /var/www/dbg/crypto/certificates/55298654.000 /var/opt/cprocsp/keys/root 
+exit
+sudo /opt/cprocsp/bin/amd64/certmgr -inst -store umy -file '/var/www/dbg/crypto/certificates/55298654e-d073-f75e-9368-0847d712bb2.cer' -cont '\\.\HDIMAGE\55298654e-d073-f75e-9368-0847d712bb2'
+echo "Success"
