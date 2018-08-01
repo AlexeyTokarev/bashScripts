@@ -15,6 +15,7 @@ cd go-ipfs
 sudo ./install.sh
 sudo ipfs init # Проверить нужен ли рут
 cd /etc/systemd/system
+sudo chown -R sluser /etc/systemd/system
 echo '[Unit]
       Description=ipfs client
       After=syslog.target network.target
